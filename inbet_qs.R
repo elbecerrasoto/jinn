@@ -103,7 +103,9 @@ pid_doms <- iscan |>
 # Subset the queries that we care
 q_pids <- q_pids |> filter(qseqid %in% QUERIES)
 
-pid_doms
+
+
+
 
 pid_doms |>
   rename(pid = protein) |>
