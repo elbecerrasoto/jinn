@@ -40,6 +40,7 @@ pid_doms <- iscan |>
   rename(pid = protein)
 
 
+# Add the aliases
 switch_vect <- function(v_chr, switch_list) {
   f <- function(v_chr) {
     do.call(
@@ -55,7 +56,46 @@ q_pids <- q_pids |>
   mutate(q_alias = switch_vect(query, QUERIES_ALIAS)) |>
   relocate(q_alias)
 
+# Join both tables
+q_pids_domains <- left_join(q_pids, pid_doms) |>
+  group_by(q_alias, query, pid) |>
+  summarise(domains = list(domain))
 
-x <- left_join(q_pids, pid_doms)
+# Filter by domains
+filter_by_domain <- function(pids, qs, doms, filtering_doms) {
+  names(doms) <- pids
+  names(qs) <- pids
+  return_vec <- vector(mode = "logical", length = length(pids))
 
-view(x)
+  for (i in seq_along(pids)) {
+    pid <- pids[i]
+    return_current <- FALSE
+
+    for (query in names(filtering_doms)) {
+      if (qs[pid] == query) {
+        return_current <- all(filtering_doms[[query]] %in% doms[pid])
+        break()
+      }
+
+      return_vec[i] <- return_current
+    }
+  }
+  return_vec
+}
+
+# Filter the table
+q_pids_domains |>
+  filter(filter_by_domain(pid, query, domains, FILTER_DOMAINS))
+
+q_pids_domains
+
+ref <- "GCF_000699465.1"
+
+ref_pids <- blasts |>
+  filter(genome == "GCF_000699465.1") |>
+  pull(sseqid)
+
+ref_pids
+ref_doms <- q_pids_domains |>
+  filter(pid %in% ref_pids)
+ref_doms$domains
