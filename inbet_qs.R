@@ -1,16 +1,23 @@
 #!/usr/bin/Rscript
+library(tidyverse)
+library(stringr)
+library(segmenTools)
+
+args <- commandArgs(trailingOnly = TRUE)
 
 # Tables
-GFF <- "results/genomes/GCF_000699465.1"
+GFF <- "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
 BLAST <- "results/blasts.tsv" 
 ISCAN <- "results/iscan.tsv"
   
 # Queries
-# J: WP_003243987.1
-# L: WP_003243213.1
+# YwqJ: WP_003243987.1
+# YwqL: WP_003243213.1
 
 QUERIES <- c("WP_003243987.1", "WP_003243213.1")
-  
+QUERIES_ALIAS <- c("YwqJ", "YwqL")
+names(QUERIES_ALIAS) <- QUERIES  
+
 # Filter Domains
 # J: IPR027797, IPR025968
 # J: Pre-toxin, YwqJ-like
@@ -20,64 +27,25 @@ QUERIES <- c("WP_003243987.1", "WP_003243213.1")
 FILTER_DOMAINS <- list(c("IPR027797", "IPR025968"), c("IPR007581"))
 names(FILTER_DOMAINS) <- QUERIES
 
-
-
-
-library(tidyverse)
-library(stringr)
-library(segmenTools)
-library(Rgff)
-
-args <- commandArgs(trailingOnly = TRUE)
-
-BLASTP <- args[1] # "results/genomes/GCF_900110305.1/blastp.tsv"
-GFF <- args[2] # "results/genomes/GCF_900110305.1/GCF_900110305.1.gff"
-OUT <- args[3] # "x.tsv"
-
-
-HEADER <- c("QueryID", "SubjectID", "PercentageIdentity", "QueryCoverage", "SubjectCoverage", "EValue")
-
-IDENTITY <- 30
-QCOVERAGE <- 60
-SCOVERAGE <- 60
-EVAL <- 0.05
-
-
-Rgff::check_gff(GFF)
-
 get_genome <- function(path) {
   str_replace(path, ".*(GC[FA]_[0-9]+\\.[0-9])\\.gff+", "\\1")
 }
 
+GENOME <- get_genome(GFF)
 
+OUT <- paste0(GENOME, "_", QUERIES_ALIAS[QUERIES[1]], "_", QUERIES_ALIAS[QUERIES[2]], ".tsv")
 
 graceful_exit <- function() {
   write_tsv(tibble(), OUT)
   quit(status = 0)
 }
 
-GENOME <- get_genome(GFF)
-REFSEQ <- str_detect(GENOME, "GCF")
+Rgff::check_gff(BLAST)
 
-blastp <- read_tsv(BLASTP, col_names = HEADER, comment = "#", )
+blast <- read_tsv(BLAST)
+iscan <- read_tsv(ISCAN)
 
-blastp <- blastp |>
-  filter(
-    PercentageIdentity >= IDENTITY,
-    QueryCoverage >= QCOVERAGE,
-    SubjectCoverage >= SCOVERAGE,
-    EValue <= EVAL
-  )
-
-if (nrow(blastp) < 2) graceful_exit()
-
-contigs <- segmenTools::gff2tab(GFF) |>
-  tibble() |>
-  filter(feature == "region") |> # only CDS
-  select_if({
-    \(x) !(all(is.na(x)) | all(x == ""))
-  }) # exclude empty cols
-
+genome <- get_genome(GFF)
 
 gff <- segmenTools::gff2tab(GFF) |>
   tibble() |>
@@ -91,23 +59,55 @@ if ("pseudo" %in% names(gff)) {
     filter(is.na(pseudo))
 }
 
+
 # definition of neighbor
-# doit by contig
+# same contig, order by start position
 gff <- gff |>
   group_by(seqname) |>
   arrange(start) |>
   mutate(order = seq_along(start)) |>
-  relocate(order) |>
-  ungroup()
+  relocate(order)
 
-queries <- group_split(blastp, QueryID)
 
-if (length(queries) < 2) graceful_exit()
+# Select query 1 and query 2 
+q1_blast <- blast |> filter(qseqid == QUERIES[1])
+q2_blast <- blast |> filter(qseqid == QUERIES[2])
 
-genes_q1 <- gff |>
-  filter(protein_id %in% queries[[1]]$SubjectID)
-genes_q2 <- gff |>
-  filter(protein_id %in% queries[[2]]$SubjectID)
+
+mtcars %>%
+  group_by(cyl) %>%
+  summarise(mean = mean(disp), n = n())
+
+filter_PIDs_by_doms <- function(PID, query) {
+  
+}
+
+pid <- iscan$protein[1]
+pid
+names(iscan)
+
+iscan |> group_by(protein) 
+
+
+# query-subject mappings
+PID_q1 <- q1_blast |> pull(sseqid) |> unique()
+PID_q2 <- q2_blast |> pull(sseqid) |> unique()
+
+
+
+
+
+
+
+
+
+q1_gff <- gff |>
+  filter(protein_id %in% q1_map_PID)
+q2_gff <- gff |>
+  filter(protein_id %in% q2_map_PID)
+
+q1_gff
+q2_gff
 
 calc <- function(gene1, gene2) {
   contig1 <- gene1$seqname
