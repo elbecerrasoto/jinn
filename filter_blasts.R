@@ -68,12 +68,24 @@ filter_by_domain <- function(pids, qs, doms, filtering_doms) {
   return_vec <- vector(mode = "logical", length = length(pids))
 
   for (i in seq_along(pids)) {
+    cat("\n")
+
+    print(paste("Starting i is:", i))
     pid <- pids[i]
+    print(paste("pid is", pid))
+    if (pid == "WP_003243987.1") {
+      print(paste("ref id:", pid))
+      print("#################")
+    }
     return_current <- FALSE
 
     for (query in names(filtering_doms)) {
       if (qs[pid] == query) {
-        return_current <- all(filtering_doms[[query]] %in% doms[pid])
+        print(paste("Entre con", query))
+        print(paste("filtering doms query is", filtering_doms[[query]]))
+        print(paste("doms[pid] is", doms[pid]))
+        print(paste("Ending Cycle", i))
+        return_current <- all(filtering_doms[[query]] %in% doms[[pid]])
         break()
       }
 
@@ -83,11 +95,14 @@ filter_by_domain <- function(pids, qs, doms, filtering_doms) {
   return_vec
 }
 
-# Filter the table
-q_pids_domains |>
-  filter(filter_by_domain(pid, query, domains, FILTER_DOMAINS))
 
-q_pids_domains
+
+pid <- q_pids_domains$pid
+query <- q_pids_domains$query
+domains <- q_pids_domains$domains
+
+names(domains) <- pid
+
 
 ref <- "GCF_000699465.1"
 
@@ -95,7 +110,10 @@ ref_pids <- blasts |>
   filter(genome == "GCF_000699465.1") |>
   pull(sseqid)
 
-ref_pids
-ref_doms <- q_pids_domains |>
-  filter(pid %in% ref_pids)
-ref_doms$domains
+all(FILTER_DOMAINS[["WP_003243987.1"]] %in% domains[[ref_pids[1]]])
+
+
+
+
+
+filter_by_domain(pid, query, domains, FILTER_DOMAINS)
