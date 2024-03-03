@@ -1,6 +1,8 @@
 #!/usr/bin/Rscript
 library(tidyverse)
 
+OUT <- "blasts_filtered.tsv"
+
 args <- commandArgs(trailingOnly = TRUE)
 
 # Filter blasts by domain
@@ -63,19 +65,16 @@ q_pids_domains <- left_join(q_pids, pid_doms) |>
 
 # Filter by domains
 filter_by_domain <- function(pids, qs, doms, filtering_doms) {
-  
   names(doms) <- pids
   names(qs) <- pids
   return_vec <- vector(mode = "logical", length = length(pids))
 
   for (i in seq_along(pids)) {
-
     pid <- pids[i]
     return_current <- FALSE
 
     for (query in names(filtering_doms)) {
       if (qs[pid] == query) {
-        
         return_current <- all(filtering_doms[[query]] %in% doms[[pid]])
         break()
       }
@@ -85,10 +84,14 @@ filter_by_domain <- function(pids, qs, doms, filtering_doms) {
   return_vec
 }
 
-q_pids_domains_filtered <- q_pids_domains |> 
+q_pids_domains_filtered <- q_pids_domains |>
   filter(filter_by_domain(pid, query, domains, FILTER_DOMAINS))
 
 # Filter blasts
-blasts |>
-  filt
-q_pids_domains_filtered$pid
+blasts_filtered <- semi_join(blasts,
+  q_pids_domains_filtered,
+  by = join_by(sseqid == pid)
+)
+
+blasts_filtered |>
+  write_tsv(OUT)
