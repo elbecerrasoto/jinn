@@ -12,11 +12,21 @@ ISCAN <- "results/iscan.tsv"
 # TODO: the filtering data into table
 # Something like
 # q_alias, query, IP_filter, IP_txt
+
+# YwqJ
+# LXG - IPR006829 TOSEARCH
+# PT-TG - IPR027797
+# YwqJ-like - IPR025968 TOSEARCH
+
+# YwqL
+# Endonuclease-V - IPR007581 TOSEARCH
+
+
 QUERIES <- c("WP_003243987.1", "WP_003243213.1")
 QUERIES_ALIAS <- list("YwqJ", "YwqL") |>
   `names<-`(QUERIES)
 
-FILTER_DOMAINS <- list(c("IPR027797", "IPR025968"), c("IPR007581")) |>
+FILTER_DOMAINS <- list(c("IPR006829", "IPR025968"), c("IPR007581")) |>
   `names<-`(QUERIES)
 
 
