@@ -69,8 +69,10 @@ stopifnot(is_tbl_NA_free(q2pids))
 
 # Add the aliases
 q2pids <- q2pids |>
-  mutate(q_alias = switch_vectorized(query,
-                                     map(QUERIES_ALIASES, \(x) x))) |>
+  mutate(q_alias = switch_vectorized(
+    query,
+    map(QUERIES_ALIASES, \(x) x)
+  )) |>
   relocate(q_alias)
 
 
