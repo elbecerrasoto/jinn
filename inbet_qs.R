@@ -11,25 +11,13 @@ args <- commandArgs(trailingOnly = TRUE)
 
 # Tables
 GFF <- "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
-BLAST <- "results/blasts.tsv"
+BLAST <- "blasts_filtered.tsv"
 ISCAN <- "results/iscan.tsv"
 
-# Queries
-# YwqJ: WP_003243987.1
-# YwqL: WP_003243213.1
 
 QUERIES <- c("WP_003243987.1", "WP_003243213.1")
-QUERIES_ALIAS <- c("YwqJ", "YwqL")
-names(QUERIES_ALIAS) <- QUERIES
-
-# Filter Domains
-# J: IPR027797, IPR025968
-# J: Pre-toxin, YwqJ-like
-# L: IPR007581
-# L: Endonuclease V
-
-FILTER_DOMAINS <- list(c("IPR027797", "IPR025968"), c("IPR007581"))
-names(FILTER_DOMAINS) <- QUERIES
+QUERIES_ALIAS <- c("YwqJ", "YwqL") |>
+  `names<-`(QUERIES)
 
 get_genome <- function(path) {
   str_replace(path, ".*(GC[FA]_[0-9]+\\.[0-9])\\.gff+", "\\1")
@@ -45,17 +33,12 @@ graceful_exit <- function() {
 }
 
 
-# Reading blast, iscan ----------------------------------------------------
-
+# read blast --------------------------------------------------------------------
 
 blast <- read_tsv(BLAST)
-iscan <- read_tsv(ISCAN)
-
 
 # reading GFF -------------------------------------------------------------
 
-
-Rgff::check_gff(GFF)
 
 gff <- segmenTools::gff2tab(GFF) |>
   tibble() |>
@@ -80,147 +63,7 @@ gff <- gff |>
 
 
 
-# Mappings ----------------------------------------------------------------
 
-# qs -> pids -> doms
-
-
-# Map each query to pid (is a 1-to-many mapping)
-q_pids <- blast |>
-  group_by(qseqid) |>
-  summarise(pids = list(unique(sseqid)))
-
-
-# Map each pid to domains (is a 1-to-many mapping)
-pid_doms <- iscan |>
-  group_by(protein) |>
-  summarise(doms = list(unique(interpro[interpro != "-"])))
-
-
-
-# Policy ------------------------------------------------------------------
-
-# Subset the queries that we care
-q_pids <- q_pids |> filter(qseqid %in% QUERIES)
-
-
-
-
-
-pid_doms |>
-  rename(pid = protein) |>
-  mutate(query = )
-
-
-
-
-require(stats)
-centre <- function(x, type) {
-  switch(type,
-    mean = mean(x),
-    median = median(x),
-    trimmed = mean(x, trim = .1)
-  )
-}
-x <- rcauchy(10)
-centre(x, "mean")
-centre(x, "median")
-centre(x, "trimmed")
-
-ccc <- c("b", "QQ", "a", "A", "bb")
-# note: cat() produces no output for NULL
-for (ch in ccc) {
-  cat(ch, ":", switch(EXPR = ch,
-    a = 1,
-    b = 2:3
-  ), "\n")
-}
-for (ch in ccc) {
-  cat(ch, ":", switch(EXPR = ch,
-    a = ,
-    A = 1,
-    b = 2:3,
-    "Otherwise: last"
-  ), "\n")
-}
-
-## switch(f, *) with a factor f
-ff <- gl(3, 1, labels = LETTERS[3:1])
-ff[1] # C
-## so one might expect " is C" here, but
-switch(ff[1],
-  A = "I am A",
-  B = "Bb..",
-  C = " is C"
-) # -> "I am A"
-## so we give a warning
-
-## Numeric EXPR does not allow a default value to be specified
-## -- it is always NULL
-for (i in c(-1:3, 9)) {
-  print(switch(i,
-    1,
-    2,
-    3,
-    4
-  ))
-}
-
-## visibility
-switch(1,
-  invisible(pi),
-  pi
-)
-switch(2,
-  invisible(pi),
-  pi
-)
-
-switch("y",
-  x = "boom",
-  y = "bam",
-  NA
-)
-x
-
-
-
-
-
-
-
-
-
-pid <- iscan$protein[1]
-pid
-names(iscan)
-
-iscan |> group_by(protein)
-
-
-# query-subject mappings
-PID_q1 <- q1_blast |>
-  pull(sseqid) |>
-  unique()
-PID_q2 <- q2_blast |>
-  pull(sseqid) |>
-  unique()
-
-
-
-
-
-
-
-
-
-q1_gff <- gff |>
-  filter(protein_id %in% q1_map_PID)
-q2_gff <- gff |>
-  filter(protein_id %in% q2_map_PID)
-
-q1_gff
-q2_gff
 
 calc <- function(gene1, gene2) {
   contig1 <- gene1$seqname
