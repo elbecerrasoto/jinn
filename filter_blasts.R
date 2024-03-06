@@ -61,15 +61,16 @@ check_domains <- function(query, domains, domains_to_check) {
 
           break()
         }
-
-        filter_lgl[i] <- filter_current
       }
+
+      filter_lgl[i] <- filter_current
     }
   }
+  filter_lgl
 }
 
-x <- mappings |>
-  group_by(q_alias, query)
 
-
-check_domains()
+mappings |>
+  group_by(q_alias, query, pid) |>
+  summarise(domains = list(domain)) |>
+  filter(check_domains(query, domains, FILTER_DOMAINS))
