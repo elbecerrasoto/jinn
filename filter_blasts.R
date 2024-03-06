@@ -52,25 +52,15 @@ check_domains <- function(query, domains, domains_to_check) {
     return(filter_lgl)
   } else {
     for (i in seq_along(domains)) {
-      filter_current <- FALSE
-
       for (Q in names(domains_to_check)) {
         if (query[i] == Q) {
-          filter_current <- domains_to_check[[Q]] %in% domains[[i]] |>
+          filter_lgl[i] <- domains_to_check[[Q]] %in% domains[[i]] |>
             all()
 
           break()
         }
       }
-
-      filter_lgl[i] <- filter_current
     }
   }
   filter_lgl
 }
-
-
-mappings |>
-  group_by(q_alias, query, pid) |>
-  summarise(domains = list(domain)) |>
-  filter(check_domains(query, domains, FILTER_DOMAINS))
