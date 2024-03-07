@@ -6,7 +6,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # Globals -----------------------------------------------------------------
 
 
-OUT_BLAST <- "blasts_filtered.tsv"
+OUT_BLASTS <- "blasts_filtered.tsv"
 OUT_MAPPINGS <- "mappings_filtered.tsv"
 
 # Filter blasts by domain
@@ -21,7 +21,7 @@ MAPPINGS <- "mappings.tsv"
 # YwqL
 # Endonuclease-V - IPR007581 TO_SEARCH
 
-FILTER_DOMAINS <- list(
+FILTER <- list(
   WP_003243987.1 = c("IPR006829", "IPR025968"),
   WP_003243213.1 = c("IPR007581")
 )
@@ -33,8 +33,10 @@ FILTER_DOMAINS <- list(
 blasts <- read_tsv(BLASTS) # only to filter it
 mappings <- read_tsv(MAPPINGS) # operate on this table
 
+# Helpers -----------------------------------------------------------------
 
-# Code --------------------------------------------------------------------
+
+
 
 # vectorized boolean function
 # to be used on dplyr::filter steps
@@ -64,3 +66,27 @@ check_domains <- function(query, domains, domains_to_check) {
   }
   filter_lgl
 }
+
+
+# Policy ------------------------------------------------------------------
+
+# Filter mappings
+mappings_filtered <- mappings |>
+  group_by(q_alias, query, pid) |>
+  summarise(domains = list(domain)) |>
+  filter(check_domains(query, domains, FILTER))
+
+mappings_filtered |>
+  group_by(q_alias, query, pid) |>
+  reframe(domain = unlist(domains)) |>
+  write_tsv(OUT_MAPPINGS)
+
+
+# Filter blasts
+blasts_filtered <- semi_join(
+  blasts, mappings_filtered,
+  join_by(sseqid == pid)
+)
+
+blasts_filtered |>
+  write_tsv(OUT_BLASTS)
