@@ -1,5 +1,6 @@
 #!/usr/bin/Rscript
 library(tidyverse)
+library(stringr)
 args <- commandArgs(trailingOnly = TRUE)
 
 

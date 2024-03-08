@@ -1,35 +1,18 @@
 #!/usr/bin/Rscript
-library(tidyverse)
+
+library(glue)
 library(stringr)
+library(tidyverse)
 library(segmenTools)
 
-# Out table ---------------------------------------------------------------
-
-
-# 1. genome
-# 2. pid
-# 3. q_alias
-# 4. query
-# 5. order
-# 6. start
-# 7. end
-# 8. contig
-# 9. strand
-# 10. pid_txt
-# 11. interpro
+# args <- commandArgs(trailingOnly = TRUE)
 
 # Globals -----------------------------------------------------------------
 
-args <- commandArgs(trailingOnly = TRUE)
-
-# Tables
+# Input
 GFF <- "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
-BLAST <- "blasts_filtered.tsv"
-ISCAN <- "results/iscan.tsv"
+MAPPINGS <- "mappings_filtered.tsv"
 
-QUERIES <- c("WP_003243987.1", "WP_003243213.1")
-QUERIES_ALIAS <- c("YwqJ", "YwqL") |>
-  `names<-`(QUERIES)
 
 get_genome <- function(path) {
   str_replace(path, ".*(GC[FA]_[0-9]+\\.[0-9])\\.gff+", "\\1")
@@ -37,13 +20,30 @@ get_genome <- function(path) {
 
 GENOME <- get_genome(GFF)
 
+# Output
+BASE <- "hits"
+OUT <- glue("{GENOME}_{BASE}.tsv")
 
-# Read Tabs --------------------------------------------------------------------
+OUT_COLS <- c(
+  "genome",
+  "pid",
+  "gene",
+  "q_alias",
+  "order",
+  "start",
+  "end",
+  "contig",
+  "strand",
+  "query",
+  "domains",
+  "product"
+)
 
-# The mapping data is generated in previous file
 
-blast <- read_tsv(BLAST)
-iscan <- read_tsv(ISCAN, na = c("NA", "-", ""))
+# Read the Data -----------------------------------------------------------
+
+
+mappings <- read_tsv(MAPPINGS)
 
 gff <- segmenTools::gff2tab(GFF) |>
   tibble() |>
@@ -52,6 +52,7 @@ gff <- segmenTools::gff2tab(GFF) |>
     \(x) !(all(is.na(x)) | all(x == ""))
   }) # exclude empty cols
 
+# Remove pseudogenes
 if ("pseudo" %in% names(gff)) {
   gff <- gff |>
     filter(is.na(pseudo))
@@ -65,3 +66,15 @@ gff <- gff |>
   arrange(start) |>
   mutate(order = seq_along(start)) |>
   relocate(order)
+
+
+# Policy ------------------------------------------------------------------
+
+
+hits <- inner_join(mappings, gff, join_by(pid == protein_id)) |>
+  mutate(genome = GENOME, contig = seqname) |>
+  select(all_of(OUT_COLS))
+
+
+hits |>
+  write_tsv(OUT)
