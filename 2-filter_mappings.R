@@ -76,9 +76,16 @@ mappings_filtered <- mappings |>
   summarise(domains = list(domain)) |>
   filter(check_domains(query, domains, FILTER))
 
+
+# TODO: Use a single string with a sep like ";"
+# instead of a list
+
 mappings_filtered |>
   group_by(q_alias, query, pid) |>
   reframe(domain = unlist(domains)) |>
+  arrange(query, pid, domain) |>
+  group_by(q_alias, query, pid) |>
+  summarise(domains = str_flatten(domain, collapse = ";")) |>
   write_tsv(OUT_MAPPINGS)
 
 
