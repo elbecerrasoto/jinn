@@ -15,10 +15,12 @@ MAPPINGS <- "mappings_filtered.tsv"
 
 
 get_genome <- function(path) {
-  str_replace(path, ".*(GC[FA]_[0-9]+\\.[0-9])\\.gff+", "\\1")
+  str_extract(path, "GC[FA]_[0-9]+\\.[0-9]")
 }
 
+
 GENOME <- get_genome(GFF)
+
 
 # Output
 BASE <- "hits"
@@ -34,6 +36,7 @@ OUT_COLS <- c(
   "end",
   "contig",
   "strand",
+  "locus_tag",
   "query",
   "domains",
   "product"
