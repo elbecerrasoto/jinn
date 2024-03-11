@@ -16,7 +16,7 @@ TARGETS <- c("WP_003243987.1", "WP_003243213.1")
 stopifnot(length(TARGETS) == 2)
 
 # Input
-HITS <- "GCF_000699465.1_Test0.tsv"
+HITS <- "GCF_000699465.1_hits.tsv"
 
 get_genome <- function(path) {
   str_extract(path, "GC[FA]_[0-9]+\\.[0-9]")
@@ -25,7 +25,7 @@ get_genome <- function(path) {
 GENOME <- get_genome(HITS)
 
 # Output
-BASE <- "distance"
+BASE <- "pairs"
 OUT <- glue("{GENOME}_{BASE}.tsv")
 
 graceful_exit <- function(assertion) {
@@ -36,16 +36,12 @@ graceful_exit <- function(assertion) {
 }
 
 
+# Read the data
+hits <- read_tsv(HITS)
+graceful_exit(nrow(hits) > 0)
+
+
 # Calc --------------------------------------------------------------------
-
-
-# genome
-# distance
-# genes_inbet
-# contig
-# strand
-# q1 p1 o1 s1 e1 # sort
-# q2 p2 o2 s2 e2 # sort
 
 
 calc <- function(gene1, gene2) {
@@ -53,13 +49,9 @@ calc <- function(gene1, gene2) {
   stopifnot(gene1$order != gene2$order)
   stopifnot(gene1$contig == gene2$contig)
 
-  first <- ifelse(gene1$order < gene2$order, gene1, gene2)
-  second <- ifelse(gene1$order > gene2$order, gene1, gene2)
 
-  print(glue("first \n{first}"))
-  print(glue("second \n{second}"))
-
-  print(glue("names {names(first)}"))
+  first <- if (gene1$order < gene2$order) gene1 else gene2
+  second <- if (gene1$order > gene2$order) gene1 else gene2
 
   distance <- second$start - first$end
   genes_inbet <- second$order - first$order
@@ -69,28 +61,26 @@ calc <- function(gene1, gene2) {
     distance = distance,
     genes_inbet = genes_inbet,
     contig = first$contig,
-    query_1 = first$query,
-    pid_1 = first$order,
+    query_1 = first$q_alias,
+    pid_1 = first$pid,
     order_1 = first$order,
     start_1 = first$start,
     end_1 = first$end,
     strand_1 = first$strand,
-    locustag_1 = first$locus_tag,
-    query_2 = second$query,
-    pid_2 = second$order,
+    # locustag_1 = first$locus_tag,
+    query_2 = second$q_alias,
+    pid_2 = second$pid,
     order_2 = second$order,
     start_2 = second$start,
     end_2 = second$end,
     strand_2 = second$strand,
-    locustag_2 = second$locus_tag,
+    # locustag_2 = second$locus_tag,
   )
 }
 
 
-# Read the Data -----------------------------------------------------------
+# Main --------------------------------------------------------------------
 
-hits <- read_tsv(HITS)
-stopifnot(nrow(hits) > 0)
 
 hits <- hits |>
   filter(query %in% TARGETS)
@@ -125,6 +115,8 @@ count_pairs <- function(hits) {
 }
 
 N_PAIRS <- count_pairs(hits)
+graceful_exit(N_PAIRS > 0)
+
 results <- vector(mode = "list", length = N_PAIRS)
 
 i <- 0
@@ -133,7 +125,7 @@ for (contig in CONTIGS) {
     filter(contig == {{ contig }}) %>%
     split(.$query)
 
-  print(glue("same contig {same_contig}"))
+  if (length(same_contig) != 2) next
 
   genes_q1 <- same_contig[[1]]
   genes_q2 <- same_contig[[2]]
@@ -150,9 +142,5 @@ for (contig in CONTIGS) {
 
 stopifnot(N_PAIRS == i)
 
-hits
-
-calc(hits[1, ], hits[2, ])
-
-hits[1, ]
-results
+do.call(bind_rows, results) |>
+  write_tsv(OUT)
