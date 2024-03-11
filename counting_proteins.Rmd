@@ -1,0 +1,97 @@
+---
+title: "Counting Proteins"
+author: "ebecerra"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## Reading the data
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+```{r}
+source("filter_blasts.R")
+```
+
+## Domain Description
+
+### YwqJ `WP_003243987.1`
+1. _LXG_ - `IPR006829`
+2. _PT-TG_ - `IPR027797`
+3. _YwqJ-like_ - `IPR025968`
+
+### YwqL `WP_003243213.1`
+1. _Endonuclease-V_ - `IPR007581`
+
+
+
+## How many unique proteins remain after filtering?
+
+### Which domains use to filter ...
+
+```{r}
+FILTER_main <- list(
+  WP_003243987.1 = c("IPR006829", "IPR025968"),
+  WP_003243213.1 = c("IPR007581")
+)
+
+
+FILTER_noEndoV <- list(
+  WP_003243987.1 = c("IPR006829", "IPR025968")
+)
+
+FILTER_all <- list(
+  WP_003243987.1 = c("IPR006829", "IPR027797", "IPR025968"),
+  WP_003243213.1 = c("IPR007581")
+)
+```
+
+
+### Counting
+
+```{r}
+count_proteins <- function(FILTER, tbl) {
+  tbl |>
+    group_by(q_alias, query, pid) |>
+    summarise(domains = list(domain)) |>
+    filter(check_domains(query, domains, FILTER)) |>
+    nrow()
+}
+```
+
+
+```{r}
+results <- list(FILTER_noEndoV, FILTER_main, FILTER_all) |>
+  map_int(count_proteins, mappings) |>
+  `names<-`(c("no_EndoV", "main", "all"))
+
+results
+```
+
+### Results
+
+#### No _EndoV_
+
+Without using the _Endonuclease V_ domain,
+the number of unique proteins is: `r results["no_EndoV"]`
+
++ $YwqJ \supseteq \{"IPR006829", "IPR025968"\}$
+
+#### Suggested filtering
+
+Using the suggested domains,
+the number of unique proteins is: `r results["main"]`
+
++ $YwqJ \supseteq \{"IPR006829", "IPR025968"\}$
++ $YwqL \supseteq \{"IPR007581"\}$
+
+#### Using all domains
+
+Using the all domains,
+the number of unique proteins is: `r results["all"]` 
+
++ $YwqL \supseteq \{"IPR007581"\}$
++ $YwqJ \supseteq \{"IPR006829", "IPR027797", "IPR025968"\}$

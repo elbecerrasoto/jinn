@@ -3,29 +3,21 @@ library(tidyverse)
 library(stringr)
 library(segmenTools)
 
+
+# Globals -----------------------------------------------------------------
+
+
 args <- commandArgs(trailingOnly = TRUE)
 
 # Tables
 GFF <- "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
-BLAST <- "results/blasts.tsv" 
+BLAST <- "blasts_filtered.tsv"
 ISCAN <- "results/iscan.tsv"
-  
-# Queries
-# YwqJ: WP_003243987.1
-# YwqL: WP_003243213.1
+
 
 QUERIES <- c("WP_003243987.1", "WP_003243213.1")
-QUERIES_ALIAS <- c("YwqJ", "YwqL")
-names(QUERIES_ALIAS) <- QUERIES  
-
-# Filter Domains
-# J: IPR027797, IPR025968
-# J: Pre-toxin, YwqJ-like
-# L: IPR007581
-# L: Endonuclease V
-  
-FILTER_DOMAINS <- list(c("IPR027797", "IPR025968"), c("IPR007581"))
-names(FILTER_DOMAINS) <- QUERIES
+QUERIES_ALIAS <- c("YwqJ", "YwqL") |>
+  `names<-`(QUERIES)
 
 get_genome <- function(path) {
   str_replace(path, ".*(GC[FA]_[0-9]+\\.[0-9])\\.gff+", "\\1")
@@ -40,12 +32,13 @@ graceful_exit <- function() {
   quit(status = 0)
 }
 
-Rgff::check_gff(BLAST)
+
+# read blast --------------------------------------------------------------------
 
 blast <- read_tsv(BLAST)
-iscan <- read_tsv(ISCAN)
 
-genome <- get_genome(GFF)
+# reading GFF -------------------------------------------------------------
+
 
 gff <- segmenTools::gff2tab(GFF) |>
   tibble() |>
@@ -69,45 +62,8 @@ gff <- gff |>
   relocate(order)
 
 
-# Select query 1 and query 2 
-q1_blast <- blast |> filter(qseqid == QUERIES[1])
-q2_blast <- blast |> filter(qseqid == QUERIES[2])
 
 
-mtcars %>%
-  group_by(cyl) %>%
-  summarise(mean = mean(disp), n = n())
-
-filter_PIDs_by_doms <- function(PID, query) {
-  
-}
-
-pid <- iscan$protein[1]
-pid
-names(iscan)
-
-iscan |> group_by(protein) 
-
-
-# query-subject mappings
-PID_q1 <- q1_blast |> pull(sseqid) |> unique()
-PID_q2 <- q2_blast |> pull(sseqid) |> unique()
-
-
-
-
-
-
-
-
-
-q1_gff <- gff |>
-  filter(protein_id %in% q1_map_PID)
-q2_gff <- gff |>
-  filter(protein_id %in% q2_map_PID)
-
-q1_gff
-q2_gff
 
 calc <- function(gene1, gene2) {
   contig1 <- gene1$seqname
