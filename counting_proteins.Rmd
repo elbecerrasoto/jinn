@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 
 ```{r}
-source("filter_blasts.R")
+source("2-filter_mappings.R")
 ```
 
 ## Domain Description
@@ -33,7 +33,7 @@ source("filter_blasts.R")
 ### Which domains use to filter ...
 
 ```{r}
-FILTER_main <- list(
+FILTER_LXG_YwqJ <- list(
   WP_003243987.1 = c("IPR006829", "IPR025968"),
   WP_003243213.1 = c("IPR007581")
 )
@@ -45,6 +45,17 @@ FILTER_noEndoV <- list(
 
 FILTER_all <- list(
   WP_003243987.1 = c("IPR006829", "IPR027797", "IPR025968"),
+  WP_003243213.1 = c("IPR007581")
+)
+
+
+FILTER_LXG <- list(
+  WP_003243987.1 = c("IPR006829"),
+  WP_003243213.1 = c("IPR007581")
+)
+
+FILTER_PTTG <- list(
+  WP_003243987.1 = c("IPR027797"),
   WP_003243213.1 = c("IPR007581")
 )
 ```
@@ -64,9 +75,9 @@ count_proteins <- function(FILTER, tbl) {
 
 
 ```{r}
-results <- list(FILTER_noEndoV, FILTER_main, FILTER_all) |>
+results <- list(FILTER_noEndoV, FILTER_LXG_YwqJ, FILTER_all, FILTER_LXG, FILTER_PTTG) |>
   map_int(count_proteins, mappings) |>
-  `names<-`(c("no_EndoV", "main", "all"))
+  `names<-`(c("no_EndoV", "LXG_YwqJ", "all", "LXG", "PTTG"))
 
 results
 ```
