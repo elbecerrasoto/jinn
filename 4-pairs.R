@@ -3,9 +3,9 @@
 
 library(glue)
 library(stringr)
-library(tidyverse)
+suppressMessages(library(tidyverse))
 
-# args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 
 # Globals -----------------------------------------------------------------
 
@@ -16,7 +16,7 @@ TARGETS <- c("WP_003243987.1", "WP_003243213.1")
 stopifnot(length(TARGETS) == 2)
 
 # Input
-HITS <- "GCF_000699465.1_hits.tsv"
+HITS <- args[[1]] # "GCF_000699465.1_hits.tsv"
 
 get_genome <- function(path) {
   str_extract(path, "GC[FA]_[0-9]+\\.[0-9]")
@@ -30,14 +30,14 @@ OUT <- glue("{GENOME}_{BASE}.tsv")
 
 graceful_exit <- function(assertion) {
   if (!assertion) {
-    write_tsv(tibble(), OUT)
+    # write_tsv(tibble(), OUT)
     quit(status = 0)
   }
 }
 
 
 # Read the data
-hits <- read_tsv(HITS)
+suppressMessages(hits <- read_tsv(HITS))
 graceful_exit(nrow(hits) > 0)
 
 

@@ -2,15 +2,15 @@
 
 library(glue)
 library(stringr)
-library(tidyverse)
+suppressMessages(library(tidyverse))
 library(segmenTools)
 
-# args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 
 # Globals -----------------------------------------------------------------
 
 # Input
-GFF <- "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
+GFF <- args[[1]] # "results/genomes/GCF_000699465.1/GCF_000699465.1.gff"
 MAPPINGS <- "mappings_filtered.tsv"
 
 
@@ -46,7 +46,7 @@ OUT_COLS <- c(
 # Read the Data -----------------------------------------------------------
 
 
-mappings <- read_tsv(MAPPINGS)
+suppressMessages(mappings <- read_tsv(MAPPINGS))
 
 gff <- segmenTools::gff2tab(GFF) |>
   tibble() |>
@@ -78,6 +78,14 @@ hits <- inner_join(mappings, gff, join_by(pid == protein_id)) |>
   mutate(genome = GENOME, contig = seqname) |>
   select(all_of(OUT_COLS))
 
-
-hits |>
-  write_tsv(OUT)
+N_HITS <- nrow(hits)
+if (N_HITS == 0) {
+  cat("\n\nNothing to be DONE.\n")
+  cat(glue("Genome: {GENOME} has no hits.\n\n\n"))
+  quit(status = 0)
+} else {
+  cat(glue("\n\nGenome: {GENOME} has {N_HITS} hits.\n"))
+  cat(glue("\n\nWriting {OUT}.\n\n\n"))
+  hits |>
+    write_tsv(OUT)
+}

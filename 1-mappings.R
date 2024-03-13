@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 library(tidyverse)
-# args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 
 
 # Globals -----------------------------------------------------------------
@@ -17,18 +17,14 @@ QUERIES_ALIASES <- c("YwqJ", "YwqL") |>
   `names<-`(QUERIES)
 
 
-
 # Reading -----------------------------------------------------------------
-
 
 
 blasts <- read_tsv(BLASTS)
 iscan <- read_tsv(ISCAN, na = c("-", "NA", ""))
 
 
-
 # Helpers -----------------------------------------------------------------
-
 
 
 
@@ -50,9 +46,7 @@ switch_vectorized <- function(v_chr, switch_list) {
 }
 
 
-
 # Code --------------------------------------------------------------------
-
 
 
 # Mappings
