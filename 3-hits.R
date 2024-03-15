@@ -76,7 +76,9 @@ gff <- gff |>
 
 hits <- inner_join(mappings, gff, join_by(pid == protein_id)) |>
   mutate(genome = GENOME, contig = seqname) |>
-  select(all_of(OUT_COLS))
+  select(any_of(OUT_COLS)) # any and emit a warning
+
+# TODO warning here
 
 N_HITS <- nrow(hits)
 if (N_HITS == 0) {
